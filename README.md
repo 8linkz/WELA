@@ -62,6 +62,10 @@ WELA also assesses log configurations **based on real-world Sigma rule coverage*
       - [`configure` command examples](#configure-command-examples)
   - [update-rules](#update-rules)
       - [`update-rules` command examples](#update-rules-command-examples)
+- [Supplementary Scripts](#supplementary-scripts)
+  - [Test-Prerequisites](#test-prerequisites)
+  - [SACL Baseline](#sacl-baseline)
+- [Known Limitations](#known-limitations)
 - [Other Windows Event Log Audit Settings Related Resources](#other-windows-event-log-audit-settings-related-resources)
 - [Contributions](#contributions)
 - [Bug Submission](#bug-submission)
@@ -98,6 +102,8 @@ WELA also assesses log configurations **based on real-world Sigma rule coverage*
 - Checking Windows event log audit settings based on **real-world Sigma rule detectability**.
 - Auditing of Windows event log file sizes and suggestions for the recommended size.
 - Setting recommended Windows event log audit policy and file sizes.
+- **Prerequisites health check** — verify audit policies, registry settings, channel enablement, and log sizes in one report.
+- **SACL baseline template** — optional script to set audit ACLs on high-value registry keys and file paths for Object Access events (4657/4663).
 
 # Prerequisites
 * Windows PowerShell 5.1 or PowerShell Core
@@ -118,13 +124,22 @@ Please download the latest stable version of WELA from the [Releases](https://gi
 - `configure`: Configure recommended Windows event log audit policy and file size.
 - `update-rules`: Update WELA's Sigma rules config files.
 
+## Supplementary Scripts (in `config/`)
+- `Test-Prerequisites.ps1`: Health check that verifies whether audit policies, registry settings, channels, and log sizes meet requirements for WELA's detection rules.
+- `sacl-baseline-example.ps1`: Optional SACL template for Object Access events (4657/4663). Covers registry keys and file paths referenced by 305 Sigma rules.
+
 # Command Usage
 ## audit-settings
 The `audit-settings` command checks the Windows event log audit policy settings and compares them with the recommended settings from [Yamato Security](https://github.com/Yamato-Security/EnableWindowsLogSettings), [Microsoft(Sever/Client)](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/audit-policy-recommendations), and [Australian Signals Directorate (ASD)](https://www.cyber.gov.au/resources-business-and-government/maintaining-devices-and-systems/system-hardening-and-administration/system-monitoring/windows-event-logging-and-forwarding).
 `RuleCount` indicates the number of [Sigma rules](https://github.com/SigmaHQ/sigma) that can detect events within that category.
 
+Output files are named with the baseline suffix so that results from different baselines do not overwrite each other:
+- `WELA-Audit-Result-<Baseline>.csv` — subcategory audit results
+- `UsableRules-<Baseline>.csv` / `UnusableRules-<Baseline>.csv` — detection rule lists
+- `mitre-ttp-navigator-current-<Baseline>.json` / `mitre-ttp-navigator-ideal-<Baseline>.json` — MITRE ATT&CK Navigator layers
+
 ### `audit-settings` command examples
-Check with the default Yamato Security's recommended settings and save results to CSV:  
+Check with the default Yamato Security's recommended settings and save results to CSV:
 ```
 ./WELA.ps1 audit-settings -Baseline YamatoSecurity
 ```
@@ -147,8 +162,10 @@ Check with Microsoft's recommended Client OS settings and display results in tab
 ## audit-filesize
 The `audit-filesize` command checks the Windows event logs' file size and compares them with the recommended settings from Yamato Security's recommendations.
 
+Output file: `WELA-FileSize-Result-<Baseline>.csv`
+
 ### `audit-filesize` command examples
-Check the Windows event log file size with Yamato Security's recommendations and save results to CSV:  
+Check the Windows event log file size with Yamato Security's recommendations and save results to CSV:
 ```
 ./WELA.ps1 audit-filesize -Baseline YamatoSecurity
 ```
@@ -173,6 +190,39 @@ Update WELA's Sigma rules config files:
 ```
 ./WELA.ps1 update-rules
 ```
+
+# Supplementary Scripts
+
+## Test-Prerequisites
+
+Run a health check to verify that your host meets the telemetry prerequisites for WELA's detection rules.
+The script checks audit subcategories, registry settings (command line auditing, PowerShell logging), channel enablement, and log sizes.
+
+```
+.\config\Test-Prerequisites.ps1
+```
+
+Show all results including passing checks:
+```
+.\config\Test-Prerequisites.ps1 -Detailed
+```
+
+> **Note:** Requires Administrator privileges. Run this before deploying WELA to identify gaps, or after `configure` to verify settings were applied.
+
+## SACL Baseline
+
+For Object Access events (Event ID 4657 for registry changes, 4663 for file access), enabling the audit subcategory alone is not sufficient — SACLs must be set on the target objects.
+The template script covers registry keys and file paths referenced by 305 Sigma rules.
+
+```
+.\config\sacl-baseline-example.ps1
+```
+
+> **Note:** Review and adjust the target paths to your environment before running. See the script comments for details.
+
+# Known Limitations
+
+- **Multi-channel applicability (AppLocker):** When a subcategory groups multiple event log channels (e.g., AppLocker's four channels: EXE and DLL, MSI and Script, Packaged app-Deployment, Packaged app-Execution), WELA evaluates them as a single unit. If *any* channel in the group is enabled, all Sigma rules for that subcategory are marked as applicable. In practice this means that partially enabled channel groups may show slightly higher rule coverage in the heatmap than is actually available. This is uncommon in real-world deployments since these channels are typically enabled or disabled together.
 
 # Other Windows Event Log Audit Settings Related Resources
 

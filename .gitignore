@@ -5,4 +5,7 @@ Cargo.lock
 *.pdb
 .idea/
 *.csv
+mitre-ttp-navigator-*.json
 .DS_Store
+.claude/
+.gitignore

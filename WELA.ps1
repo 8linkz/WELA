@@ -5275,9 +5275,6 @@ function AuditLogSetting {
             [void]$enabledguid.Add($matches[1])
         }
     }
-    if (-not $debug) {
-        Remove-Item -Path $autidpolTxt -ErrorAction SilentlyContinue
-    }
     if (-not (Test-RulesSchema -Path "config/security_rules.json")) {
         Write-Error "Rules file failed schema validation. Run 'update-rules' to re-download."
         return
@@ -5395,6 +5392,9 @@ function AuditLogSetting {
     Write-Host ""
     Write-Host "You can utilize $utilizationPercentage% of your detection rules. (Baseline: $Baseline)" -ForegroundColor $color
     Write-Host ""
+    if (-not $debug) {
+        Remove-Item -Path $autidpolTxt -ErrorAction SilentlyContinue
+    }
 }
 
 
@@ -6286,3 +6286,9 @@ switch ($Cmd.ToLower()) {
         Write-Host $usage
     }
 }
+
+Write-Host ""
+Write-Host "Scan completed successfully." -ForegroundColor Green
+Write-Host ""
+Write-Host "Press any key to close..." -ForegroundColor DarkGray
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

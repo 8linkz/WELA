@@ -214,6 +214,20 @@ function Test-ChannelEnabled {
     return $false
 }
 
+function Normalize-AuditSetting {
+    param([string]$Setting)
+    $s = $Setting.Trim()
+    if ($s -eq "No Auditing")           { return "No Auditing" }
+    if ($s -eq "Success and Failure")   { return "Success and Failure" }
+    if ($s -eq "Success")               { return "Success" }
+    if ($s -eq "Failure")               { return "Failure" }
+    if ($s -match '(?i)Keine.*berwachung')  { return "No Auditing" }
+    if ($s -match '(?i)Erfolg.*Fehler')     { return "Success and Failure" }
+    if ($s -match '(?i)^Erfolg$')           { return "Success" }
+    if ($s -match '(?i)^Fehler$')           { return "Failure" }
+    return $s
+}
+
 function GetAuditpol {
     $mapping = @{}
     Get-Content "./auditpol.txt" | Select-Object -Skip 3 |　ForEach-Object {
@@ -223,7 +237,7 @@ function GetAuditpol {
         $columns = $_ -split ','
 
         $guid = $columns[3].Trim() -replace '^\{|\}$', ''  # 波括弧を削除
-        $inclusionSetting = $columns[4].Trim()
+        $inclusionSetting = Normalize-AuditSetting $columns[4].Trim()
         if ($guid -and $inclusionSetting) {
             $mapping[$guid] = $inclusionSetting
         }
@@ -5270,7 +5284,7 @@ function AuditLogSetting {
         Start-Process -FilePath "cmd.exe" -ArgumentList "/c chcp 437 & auditpol /get /category:* /r" -NoNewWindow -Wait -RedirectStandardOutput $autidpolTxt
     }
     $enabledguid = [System.Collections.Generic.HashSet[string]]::new()
-    Get-Content -Path $autidpolTxt | Select-String -NotMatch "No Auditing" | ForEach-Object {
+    Get-Content -Path $autidpolTxt | Where-Object { $_ -notmatch 'No Auditing|Keine.*berwachung' } | ForEach-Object {
         if ($_ -match '{(.*?)}') {
             [void]$enabledguid.Add($matches[1])
         }

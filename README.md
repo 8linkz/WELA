@@ -108,6 +108,7 @@ WELA also assesses log configurations **based on real-world Sigma rule coverage*
 # Prerequisites
 * Windows PowerShell 5.1 or PowerShell Core
 * Running PowerShell with Administrator privileges
+* Supported OS languages: English and German (audit policy output is automatically normalized to English regardless of the system locale)
 
 # Downloads
 

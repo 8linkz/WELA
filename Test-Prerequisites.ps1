@@ -128,7 +128,12 @@ function Test-AuditSubcategories {
             $cols = $_ -split ','
             if ($cols.Count -ge 5) {
                 $subName = $cols[2].Trim()
-                $setting = $cols[4].Trim()
+                $rawSetting = $cols[4].Trim()
+                $setting = if ($rawSetting -match '(?i)Keine.*berwachung') { "No Auditing" }
+                           elseif ($rawSetting -match '(?i)Erfolg.*Fehler') { "Success and Failure" }
+                           elseif ($rawSetting -match '(?i)^Erfolg$') { "Success" }
+                           elseif ($rawSetting -match '(?i)^Fehler$') { "Failure" }
+                           else { $rawSetting }
                 if ($subName) { $auditMap[$subName] = $setting }
             }
         }
@@ -168,7 +173,7 @@ function Test-AuditSubcategories {
 
     foreach ($sub in $required) {
         $setting = $auditMap[$sub.Name]
-        $isNoAudit = (-not $setting) -or ($setting -match '(?i)No Auditing|Keine')
+        $isNoAudit = (-not $setting) -or ($setting -match '(?i)No Auditing')
         $isSuccessAndFailure = $setting -match '(?i)Success and Failure'
         if ($isNoAudit) {
             Write-Result "FAIL" "$($sub.Name): No Auditing ($($sub.Note))"
@@ -184,7 +189,7 @@ function Test-AuditSubcategories {
 
     foreach ($sub in $optional) {
         $setting = $auditMap[$sub.Name]
-        $isNoAudit = (-not $setting) -or ($setting -match '(?i)No Auditing|Keine')
+        $isNoAudit = (-not $setting) -or ($setting -match '(?i)No Auditing')
         if ($isNoAudit) {
             Write-Result "WARN" "$($sub.Name): No Auditing ($($sub.Note))"
         } else {

@@ -68,7 +68,7 @@ class WELA {
     [void] Output([string] $Format) {
         switch ($Format.ToLower()) {
             "std" {
-                $color = if ($this.CurrentSetting -eq "Enabled" -or $this.CurrentSetting -contains "Success" -or $this.CurrentSetting -contains "Failure") { "Green" } else { "Red" }
+                $color = if ($this.CurrentSetting -eq "Enabled" -or $this.CurrentSetting -match "Success" -or $this.CurrentSetting -match "Failure") { "Green" } else { "Red" }
                 $ruleCounts = ""
                 $logEnabled = $this.CurrentSetting
                 $allZero = ($this.RulesCount.Values | Where-Object { $_ -ne 0 }).Count

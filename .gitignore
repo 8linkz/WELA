@@ -6,6 +6,7 @@ Cargo.lock
 .idea/
 *.csv
 mitre-ttp-navigator-*.json
+WELA-Prerequisites_*.txt
 .DS_Store
 .claude/
 .gitignore

@@ -404,13 +404,24 @@ if ($script:warnCount -gt 0) { $summaryParts += "WARN: $($script:warnCount)" }
 if ($script:failCount -gt 0) { $summaryParts += "FAIL: $($script:failCount)" }
 $summaryLine = "  " + ($summaryParts -join " | ")
 
-if ($script:failCount -gt 0) {
-    Write-Line $summaryLine -ForegroundColor Red
-} elseif ($script:warnCount -gt 0) {
-    Write-Line $summaryLine -ForegroundColor Yellow
-} else {
-    Write-Line $summaryLine -ForegroundColor Green
+# Write each part in its own color
+Write-Host "  " -NoNewline
+$first = $true
+if ($script:passCount -gt 0) {
+    Write-Host "PASS: $($script:passCount)" -ForegroundColor Green -NoNewline
+    $first = $false
 }
+if ($script:warnCount -gt 0) {
+    if (-not $first) { Write-Host " | " -NoNewline }
+    Write-Host "WARN: $($script:warnCount)" -ForegroundColor Yellow -NoNewline
+    $first = $false
+}
+if ($script:failCount -gt 0) {
+    if (-not $first) { Write-Host " | " -NoNewline }
+    Write-Host "FAIL: $($script:failCount)" -ForegroundColor Red -NoNewline
+}
+Write-Host ""
+$script:log.AppendLine($summaryLine) | Out-Null
 # Save results to file
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $timestamp = Get-Date -Format "MM-dd-yyyy_hh-mm-ss_tt"
